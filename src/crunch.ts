@@ -2,10 +2,10 @@ import * as ethers from "ethers";
 
 import * as dotenv from "dotenv";
 import {
-  ICrunchProtocol__factory,
-  ICrunchVendor__factory,
+  CrunchProtocol__factory,
+  CrunchVendor__factory,
 } from "crunch-contract";
-import { deploySignatrue } from "./signature";
+import { deploySignatrue, withdrawSignatrue } from "./signature";
 dotenv.config();
 // const INFURA_KEY = `${process.env.INFURA_API_KEY}`;
 const PRIVATE_KEY = `${process.env.PRIVATE_KEY}`;
@@ -17,8 +17,13 @@ const wallet = new ethers.Wallet(PRIVATE_KEY);
 const providerWallet = wallet.connect(provider);
 // create vendor
 async function creatorVendor() {
-  const protocol = ICrunchProtocol__factory.connect(caddress, providerWallet);
-  const [tokenID, price, rate, amount] = [BigInt("1"), "1", "1", "1"];
+  const protocol = CrunchProtocol__factory.connect(caddress, providerWallet);
+  const [
+    tokenID, // NFT ID
+    price, // NFT offering price
+    rate, // Creator share ratio 1-100
+    amount, // Number of NFTs offered for sale
+  ] = [BigInt("1"), "1", "1", "1"];
   const signatrue = await deploySignatrue(wallet, tokenID, caddress);
   const tx = await protocol.deployCrunchVendor(
     tokenID,
@@ -33,8 +38,8 @@ async function creatorVendor() {
 // mint token
 async function mintToken() {
   const tokenID = "1";
-  const amount = "1";
-  const protocol = ICrunchProtocol__factory.connect(caddress, providerWallet);
+  const amount = "1"; //mint NFT quantity
+  const protocol = CrunchProtocol__factory.connect(caddress, providerWallet);
   const tx = await protocol.mint(tokenID, amount);
   const resp = await tx.wait();
   return resp;
@@ -42,9 +47,9 @@ async function mintToken() {
 
 //topup purchase
 async function topup() {
-  const invater = "0x1";
-  const amount = 1;
-  const protocol = ICrunchVendor__factory.connect(caddress, providerWallet);
+  const invater = "0x1"; //Inviter address
+  const amount = 1; // purchase quantity
+  const protocol = CrunchVendor__factory.connect(caddress, providerWallet);
   const tx = await protocol.topUp(invater, amount);
   const resp = await tx.wait();
   return resp;
@@ -53,9 +58,21 @@ async function topup() {
 //burnToClaim
 async function burnToClaim() {
   const tokenID = "1";
-  const amount = "1";
-  const protocol = ICrunchProtocol__factory.connect(caddress, providerWallet);
+  const amount = "1"; //burn NFT quantity
+  const protocol = CrunchProtocol__factory.connect(caddress, providerWallet);
   const tx = await protocol.burnToClaim(tokenID, amount);
+  const resp = await tx.wait();
+  return resp;
+}
+
+//withdraw
+async function withdraw() {
+  const tokenID = BigInt("1");
+  const nonce = "1";
+  const amount = BigInt("1");
+  const protocol = CrunchProtocol__factory.connect(caddress, providerWallet);
+  const signatrue = await withdrawSignatrue(wallet, tokenID, amount, nonce);
+  const tx = await protocol.withdraw(tokenID, amount, signatrue, nonce);
   const resp = await tx.wait();
   return resp;
 }
